@@ -3,6 +3,7 @@ package tracelog
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,12 +13,17 @@ const (
 	NormalLogLevel = "NORMAL"
 	DevelLogLevel  = "DEVEL"
 	timeFlags      = log.LstdFlags | log.Lmicroseconds
+
+	infoPrefix    = "INFO: "
+	warningPrefix = "WARNING: "
+	errorPrefix   = "ERROR: "
+	debugPrefix   = "DEBUG: "
 )
 
-var InfoLogger = NewErrorLogger(os.Stdout, "INFO: ")
-var WarningLogger = NewErrorLogger(os.Stdout, "WARNING: ")
-var ErrorLogger = NewErrorLogger(os.Stderr, "ERROR: ")
-var DebugLogger = NewErrorLogger(ioutil.Discard, "DEBUG: ")
+var InfoLogger = NewErrorLogger(os.Stdout, infoPrefix)
+var WarningLogger = NewErrorLogger(os.Stdout, warningPrefix)
+var ErrorLogger = NewErrorLogger(os.Stderr, errorPrefix)
+var DebugLogger = NewErrorLogger(ioutil.Discard, debugPrefix)
 
 var LogLevels = []string{NormalLogLevel, DevelLogLevel}
 var logLevel = NormalLogLevel
@@ -28,9 +34,9 @@ var logLevelFormatters = map[string]string{
 
 func setupLoggers() {
 	if logLevel == NormalLogLevel {
-		DebugLogger = NewErrorLogger(ioutil.Discard, "DEBUG: ")
+		DebugLogger = NewErrorLogger(ioutil.Discard, debugPrefix)
 	} else {
-		DebugLogger = NewErrorLogger(os.Stdout, "DEBUG: ")
+		DebugLogger = NewErrorLogger(os.Stdout, debugPrefix)
 	}
 }
 
@@ -64,4 +70,11 @@ func UpdateLogLevel(newLevel string) error {
 	logLevel = newLevel
 	setupLoggers()
 	return nil
+}
+
+func RedirectLogging(infoWriter, warningWriter, errorWriter, debugWriter io.Writer) {
+	InfoLogger = NewErrorLogger(infoWriter, infoPrefix)
+	WarningLogger = NewErrorLogger(warningWriter, warningPrefix)
+	ErrorLogger = NewErrorLogger(errorWriter, errorPrefix)
+	DebugLogger = NewErrorLogger(debugWriter, debugPrefix)
 }
